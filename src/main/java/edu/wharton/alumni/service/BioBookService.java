@@ -1,23 +1,22 @@
 package edu.wharton.alumni.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.wharton.alumni.dto.BioBookClaimResponse;
 import edu.wharton.alumni.dto.BioBookLookupResponse;
 import edu.wharton.alumni.model.AlumniProfile;
+import edu.wharton.alumni.model.BioBookClaim;
 import edu.wharton.alumni.model.BioBookProfile;
 import edu.wharton.alumni.model.Role;
-import org.springframework.core.io.ClassPathResource;
+import edu.wharton.alumni.repository.BioBookClaimRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HexFormat;
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,16 +28,15 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class BioBookService {
     private final AlumniService alumniService;
     private final AuthService authService;
-    private final List<BioBookClaimRecord> claimRecords;
+    private final BioBookClaimRepository claimRepository;
+    private final ObjectMapper objectMapper;
 
-    public BioBookService(AlumniService alumniService, AuthService authService, ObjectMapper objectMapper) throws IOException {
+    public BioBookService(AlumniService alumniService, AuthService authService,
+                          BioBookClaimRepository claimRepository, ObjectMapper objectMapper) {
         this.alumniService = alumniService;
         this.authService = authService;
-        this.claimRecords = objectMapper.readValue(
-                new ClassPathResource("seed/biobook-claims.json").getInputStream(),
-                new TypeReference<>() {
-                }
-        );
+        this.claimRepository = claimRepository;
+        this.objectMapper = objectMapper;
     }
 
     public BioBookLookupResponse lookup(String email) {
@@ -61,10 +59,16 @@ public class BioBookService {
 
     private Optional<BioBookProfile> findProfileByEmail(String email) {
         String hash = sha256(email.trim().toLowerCase(Locale.ROOT));
-        return claimRecords.stream()
-                .filter(record -> record.emailHashes().contains(hash))
-                .map(BioBookClaimRecord::profile)
-                .findFirst();
+        return claimRepository.findByEmailHash(hash)
+                .map(this::toBioBookProfile);
+    }
+
+    private BioBookProfile toBioBookProfile(BioBookClaim claim) {
+        try {
+            return objectMapper.readValue(claim.profileJson(), BioBookProfile.class);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Unable to read BioBook profile for claim " + claim.id(), exception);
+        }
     }
 
     private AlumniProfile toAlumniProfile(String email, String password, BioBookProfile bioBookProfile) {

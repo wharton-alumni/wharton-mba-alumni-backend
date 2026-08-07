@@ -3,6 +3,7 @@ package edu.wharton.alumni.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
@@ -14,16 +15,21 @@ public class SeedDataService {
     private final ObjectMapper objectMapper;
     private final AlumniService alumniService;
     private final EventService eventService;
+    private final boolean seedEnabled;
 
-    public SeedDataService(ObjectMapper objectMapper, AlumniService alumniService, EventService eventService) {
+    public SeedDataService(ObjectMapper objectMapper, AlumniService alumniService, EventService eventService,
+                           @Value("${app.seed.enabled}") boolean seedEnabled) {
         this.objectMapper = objectMapper;
         this.alumniService = alumniService;
         this.eventService = eventService;
+        this.seedEnabled = seedEnabled;
     }
 
     @PostConstruct
     public void seedOnStartup() {
-        seed();
+        if (seedEnabled) {
+            seed();
+        }
     }
 
     public SeedResult seed() {

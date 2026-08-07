@@ -3,6 +3,7 @@ package edu.wharton.alumni.service;
 import edu.wharton.alumni.dto.ProfileUpdateRequest;
 import edu.wharton.alumni.model.AlumniProfile;
 import edu.wharton.alumni.model.CohortCampus;
+import edu.wharton.alumni.repository.AlumniProfileRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -13,21 +14,23 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 public class AlumniService {
-    private final Map<UUID, AlumniProfile> profiles = new ConcurrentHashMap<>();
+    private final AlumniProfileRepository profileRepository;
     private final BCryptPasswordEncoder seedEncoder = new BCryptPasswordEncoder();
+
+    public AlumniService(AlumniProfileRepository profileRepository) {
+        this.profileRepository = profileRepository;
+    }
 
     public List<AlumniProfile> findAll(String search, CohortCampus cohortCampus, String industry, String location,
                                        Integer classYearFrom, Integer classYearTo, Boolean willingToMentor, Boolean hiring) {
-        return profiles.values().stream()
+        return profileRepository.findAll().stream()
                 .filter(AlumniProfile::approved)
                 .filter(profile -> cohortCampus == null || profile.cohortCampus() == cohortCampus)
                 .filter(profile -> blank(industry) || profile.industry().equalsIgnoreCase(industry))
@@ -43,19 +46,16 @@ public class AlumniService {
     }
 
     public Optional<AlumniProfile> findByEmail(String email) {
-        return profiles.values().stream()
-                .filter(profile -> profile.email().equalsIgnoreCase(email))
-                .findFirst();
+        return profileRepository.findByEmailIgnoreCase(email);
     }
 
     public AlumniProfile findInternal(UUID id) {
-        return Optional.ofNullable(profiles.get(id))
+        return profileRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Profile not found."));
     }
 
     public AlumniProfile save(AlumniProfile profile) {
-        profiles.put(profile.id(), profile);
-        return profile;
+        return profileRepository.save(profile);
     }
 
     public AlumniProfile update(UUID id, ProfileUpdateRequest request) {
@@ -83,16 +83,15 @@ public class AlumniService {
                 current.approved(),
                 current.createdAt()
         );
-        profiles.put(id, updated);
-        return updated.withoutPassword();
+        return profileRepository.save(updated).withoutPassword();
     }
 
     public void replaceWithSeedData(List<SeedAlumniProfile> seedProfiles) {
-        profiles.clear();
+        profileRepository.deleteAll();
         for (int index = 0; index < seedProfiles.size(); index++) {
             SeedAlumniProfile seed = seedProfiles.get(index);
             UUID id = UUID.nameUUIDFromBytes(seed.email().toLowerCase(Locale.ROOT).getBytes(StandardCharsets.UTF_8));
-            profiles.put(id, new AlumniProfile(
+            profileRepository.save(new AlumniProfile(
                 id,
                 seed.email().toLowerCase(Locale.ROOT),
                 seedEncoder.encode("password"),

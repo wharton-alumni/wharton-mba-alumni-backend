@@ -15,6 +15,6 @@ public record EventRequest(
         @NotBlank String location,
         String externalLink,
         String imageUrl,
-        @NotNull UUID postedById
+        UUID postedById
 ) {
 }

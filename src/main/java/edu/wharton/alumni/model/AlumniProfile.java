@@ -100,6 +100,12 @@ public class AlumniProfile {
                 hiring, avatarUrl, role, approved, createdAt);
     }
 
+    public AlumniProfile withPasswordHash(String passwordHash) {
+        return new AlumniProfile(id, email, passwordHash, firstName, lastName, phoneNumber, cohortCampus, classYear,
+                currentTitle, currentCompany, industry, city, stateCountry, linkedinUrl, bio, willingToMentor,
+                hiring, avatarUrl, role, approved, createdAt);
+    }
+
     public UUID id() {
         return id;
     }

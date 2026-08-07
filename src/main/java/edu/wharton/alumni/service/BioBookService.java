@@ -52,12 +52,15 @@ public class BioBookService {
             throw new ResponseStatusException(CONFLICT, "An alumni profile already exists for that email. Please log in with your password.");
         }
 
-        AlumniProfile profile = toAlumniProfile(email, password, bioBookProfile);
-        AlumniProfile saved = alumniService.save(profile).withoutPassword();
-        return new BioBookClaimResponse("demo-token-" + saved.id(), saved, bioBookProfile);
+        AlumniProfile saved = createClaimedAlumniProfile(email, password, bioBookProfile);
+        return new BioBookClaimResponse(authService.tokenFor(saved), saved.withoutPassword(), bioBookProfile);
     }
 
     private Optional<BioBookProfile> findProfileByEmail(String email) {
+        return findBioBookProfile(email);
+    }
+
+    public Optional<BioBookProfile> findBioBookProfile(String email) {
         String hash = sha256(email.trim().toLowerCase(Locale.ROOT));
         return claimRepository.findByEmailHash(hash)
                 .map(this::toBioBookProfile);
@@ -105,6 +108,10 @@ public class BioBookService {
                 true,
                 Instant.now()
         );
+    }
+
+    public AlumniProfile createClaimedAlumniProfile(String email, String password, BioBookProfile bioBookProfile) {
+        return alumniService.save(toAlumniProfile(email, password, bioBookProfile));
     }
 
     private String sha256(String value) {

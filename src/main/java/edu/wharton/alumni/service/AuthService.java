@@ -1,15 +1,26 @@
 package edu.wharton.alumni.service;
 
+import edu.wharton.alumni.dto.ForgotPasswordRequest;
 import edu.wharton.alumni.dto.LoginRequest;
 import edu.wharton.alumni.dto.LoginResponse;
 import edu.wharton.alumni.dto.RegisterRequest;
+import edu.wharton.alumni.dto.ResetPasswordRequest;
 import edu.wharton.alumni.model.AlumniProfile;
+import edu.wharton.alumni.model.PasswordResetToken;
 import edu.wharton.alumni.model.Role;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import edu.wharton.alumni.repository.PasswordResetTokenRepository;
+import edu.wharton.alumni.security.JwtService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.Base64;
+import java.util.HexFormat;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,13 +30,26 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 @Service
 public class AuthService {
     private final AlumniService alumniService;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final PasswordResetTokenRepository resetTokenRepository;
+    private final RateLimitService rateLimitService;
+    private final long resetTokenTtlMinutes;
+    private final SecureRandom secureRandom = new SecureRandom();
 
-    public AuthService(AlumniService alumniService) {
+    public AuthService(AlumniService alumniService, PasswordEncoder passwordEncoder, JwtService jwtService,
+                       PasswordResetTokenRepository resetTokenRepository, RateLimitService rateLimitService,
+                       @Value("${app.auth.reset-token-ttl-minutes}") long resetTokenTtlMinutes) {
         this.alumniService = alumniService;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+        this.resetTokenRepository = resetTokenRepository;
+        this.rateLimitService = rateLimitService;
+        this.resetTokenTtlMinutes = resetTokenTtlMinutes;
     }
 
     public LoginResponse login(LoginRequest request) {
+        rateLimitService.check("login:" + normalize(request.email()), 8, 900);
         AlumniProfile profile = alumniService.findByEmail(request.email())
                 .orElseThrow(() -> new ResponseStatusException(UNAUTHORIZED, "Invalid email or password."));
 
@@ -33,7 +57,7 @@ public class AuthService {
             throw new ResponseStatusException(UNAUTHORIZED, "Invalid email or password.");
         }
 
-        return new LoginResponse("demo-token-" + profile.id(), profile.withoutPassword());
+        return new LoginResponse(jwtService.createToken(profile), profile.withoutPassword());
     }
 
     public LoginResponse register(RegisterRequest request) {
@@ -66,10 +90,66 @@ public class AuthService {
                 Instant.now()
         );
         AlumniProfile saved = alumniService.save(profile);
-        return new LoginResponse("demo-token-" + saved.id(), saved.withoutPassword());
+        return new LoginResponse(jwtService.createToken(saved), saved.withoutPassword());
     }
 
-    public BCryptPasswordEncoder passwordEncoder() {
+    public AlumniProfile me(UUID profileId) {
+        return alumniService.findInternal(profileId).withoutPassword();
+    }
+
+    public Optional<String> forgotPassword(ForgotPasswordRequest request) {
+        rateLimitService.check("forgot:" + normalize(request.email()), 5, 3600);
+        Optional<AlumniProfile> profile = alumniService.findByEmail(request.email());
+        if (profile.isEmpty()) {
+            return Optional.empty();
+        }
+        String token = randomToken();
+        resetTokenRepository.save(new PasswordResetToken(
+                UUID.randomUUID(),
+                profile.get().id(),
+                sha256(token),
+                Instant.now().plusSeconds(resetTokenTtlMinutes * 60),
+                null,
+                Instant.now()
+        ));
+        return Optional.of(token);
+    }
+
+    public void resetPassword(ResetPasswordRequest request) {
+        PasswordResetToken token = resetTokenRepository.findByTokenHash(sha256(request.token()))
+                .orElseThrow(() -> new ResponseStatusException(UNAUTHORIZED, "Invalid or expired reset token."));
+        if (token.usedAt() != null || token.expiresAt().isBefore(Instant.now())) {
+            throw new ResponseStatusException(UNAUTHORIZED, "Invalid or expired reset token.");
+        }
+        AlumniProfile profile = alumniService.findInternal(token.profileId());
+        alumniService.save(profile.withPasswordHash(passwordEncoder.encode(request.password())));
+        resetTokenRepository.save(token.markUsed());
+    }
+
+    public PasswordEncoder passwordEncoder() {
         return passwordEncoder;
+    }
+
+    public String tokenFor(AlumniProfile profile) {
+        return jwtService.createToken(profile);
+    }
+
+    private String randomToken() {
+        byte[] bytes = new byte[32];
+        secureRandom.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private String sha256(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception exception) {
+            throw new IllegalStateException("Unable to hash token.", exception);
+        }
+    }
+
+    private String normalize(String email) {
+        return email == null ? "" : email.trim().toLowerCase();
     }
 }

@@ -54,6 +54,14 @@ public class AlumniService {
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Profile not found."));
     }
 
+    public AlumniProfile findPublic(UUID id) {
+        AlumniProfile profile = findInternal(id);
+        if (!profile.approved()) {
+            throw new ResponseStatusException(NOT_FOUND, "Profile not found.");
+        }
+        return profile.withoutPassword();
+    }
+
     public AlumniProfile save(AlumniProfile profile) {
         return profileRepository.save(profile);
     }

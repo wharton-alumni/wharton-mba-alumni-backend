@@ -3,8 +3,10 @@ package edu.wharton.alumni.controller;
 import edu.wharton.alumni.dto.EventRequest;
 import edu.wharton.alumni.model.AlumniEvent;
 import edu.wharton.alumni.model.EventStatus;
+import edu.wharton.alumni.security.JwtUser;
 import edu.wharton.alumni.service.EventService;
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,7 +31,7 @@ public class EventController {
     }
 
     @PostMapping
-    public AlumniEvent submitEvent(@Valid @RequestBody EventRequest request) {
-        return eventService.submit(request);
+    public AlumniEvent submitEvent(@AuthenticationPrincipal JwtUser user, @Valid @RequestBody EventRequest request) {
+        return eventService.submit(request, user.id());
     }
 }

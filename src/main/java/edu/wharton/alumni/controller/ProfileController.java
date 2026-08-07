@@ -3,7 +3,9 @@ package edu.wharton.alumni.controller;
 import edu.wharton.alumni.dto.ProfileUpdateRequest;
 import edu.wharton.alumni.model.AlumniProfile;
 import edu.wharton.alumni.model.CohortCampus;
+import edu.wharton.alumni.security.JwtUser;
 import edu.wharton.alumni.service.AlumniService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -24,6 +26,16 @@ public class ProfileController {
         this.alumniService = alumniService;
     }
 
+    @GetMapping("/me")
+    public AlumniProfile me(@AuthenticationPrincipal JwtUser user) {
+        return alumniService.findInternal(user.id()).withoutPassword();
+    }
+
+    @PutMapping("/me")
+    public AlumniProfile updateMe(@AuthenticationPrincipal JwtUser user, @RequestBody ProfileUpdateRequest request) {
+        return alumniService.update(user.id(), request);
+    }
+
     @GetMapping
     public List<AlumniProfile> listProfiles(
             @RequestParam(required = false) String search,
@@ -36,6 +48,11 @@ public class ProfileController {
             @RequestParam(required = false) Boolean hiring
     ) {
         return alumniService.findAll(search, cohortCampus, industry, location, classYearFrom, classYearTo, willingToMentor, hiring);
+    }
+
+    @GetMapping("/{id}")
+    public AlumniProfile findProfile(@PathVariable UUID id) {
+        return alumniService.findPublic(id);
     }
 
     @PutMapping("/{id}")

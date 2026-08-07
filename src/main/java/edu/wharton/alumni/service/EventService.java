@@ -32,8 +32,8 @@ public class EventService {
         return eventRepository.findByStatusOrderByCreatedAtDesc(status);
     }
 
-    public AlumniEvent submit(EventRequest request) {
-        AlumniProfile poster = alumniService.findInternal(request.postedById());
+    public AlumniEvent submit(EventRequest request, UUID postedById) {
+        AlumniProfile poster = alumniService.findInternal(postedById);
         AlumniEvent event = new AlumniEvent(
                 UUID.randomUUID(),
                 request.title(),

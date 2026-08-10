@@ -1,3 +1,6 @@
 target/
 .idea/
 .DS_Store
+src/main/resources/seed/biobook-claims.json
+src/main/resources/seed/*biobook*.json
+*.xlsx

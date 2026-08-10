@@ -17,6 +17,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -42,6 +43,19 @@ public class BioBookService {
     public BioBookLookupResponse lookup(String email) {
         Optional<BioBookProfile> profile = findProfileByEmail(email);
         return new BioBookLookupResponse(profile.isPresent(), profile.orElse(null));
+    }
+
+    public List<BioBookProfile> findAllBioBookProfiles() {
+        return claimRepository.findAll().stream()
+                .map(this::toBioBookProfile)
+                .sorted((left, right) -> valueOr(left.fullLegalName(), "").compareToIgnoreCase(valueOr(right.fullLegalName(), "")))
+                .toList();
+    }
+
+    public Optional<BioBookProfile> findBioBookProfileById(String id) {
+        return findAllBioBookProfiles().stream()
+                .filter(profile -> profile.id() != null && profile.id().equals(id))
+                .findFirst();
     }
 
     public BioBookClaimResponse claim(String email, String password) {

@@ -15,13 +15,16 @@ public class SeedDataService {
     private final ObjectMapper objectMapper;
     private final AlumniService alumniService;
     private final EventService eventService;
+    private final BioBookSeedService bioBookSeedService;
     private final boolean seedEnabled;
 
     public SeedDataService(ObjectMapper objectMapper, AlumniService alumniService, EventService eventService,
+                           BioBookSeedService bioBookSeedService,
                            @Value("${app.seed.enabled}") boolean seedEnabled) {
         this.objectMapper = objectMapper;
         this.alumniService = alumniService;
         this.eventService = eventService;
+        this.bioBookSeedService = bioBookSeedService;
         this.seedEnabled = seedEnabled;
     }
 
@@ -46,6 +49,7 @@ public class SeedDataService {
             );
             alumniService.replaceWithSeedData(alumni);
             eventService.replaceWithSeedData(events);
+            bioBookSeedService.replaceAll();
             return new SeedResult(alumni.size(), events.size());
         } catch (IOException exception) {
             throw new IllegalStateException("Unable to load seed data.", exception);

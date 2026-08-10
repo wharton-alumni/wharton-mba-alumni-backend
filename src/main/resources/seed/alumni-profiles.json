@@ -1,6 +1,6 @@
 [
   {
-    "email": "admin@wharton.example",
+    "email": "admin@wharton.upenn.edu",
     "firstName": "Avery",
     "lastName": "Bennett",
     "phoneNumber": "215-555-0100",
@@ -20,7 +20,7 @@
     "approved": true
   },
   {
-    "email": "maya.chen@wharton.example",
+    "email": "maya.chen@wharton.upenn.edu",
     "firstName": "Maya",
     "lastName": "Chen",
     "phoneNumber": "415-555-0101",
@@ -40,7 +40,7 @@
     "approved": true
   },
   {
-    "email": "diego.ramirez@wharton.example",
+    "email": "diego.ramirez@wharton.upenn.edu",
     "firstName": "Diego",
     "lastName": "Ramirez",
     "phoneNumber": "305-555-0102",
@@ -60,7 +60,7 @@
     "approved": true
   },
   {
-    "email": "sarah.okafor@wharton.example",
+    "email": "sarah.okafor@wharton.upenn.edu",
     "firstName": "Sarah",
     "lastName": "Okafor",
     "phoneNumber": "212-555-0103",
@@ -80,7 +80,7 @@
     "approved": true
   },
   {
-    "email": "jonathan.lee@wharton.example",
+    "email": "jonathan.lee@wharton.upenn.edu",
     "firstName": "Jonathan",
     "lastName": "Lee",
     "phoneNumber": "206-555-0104",
@@ -100,7 +100,7 @@
     "approved": true
   },
   {
-    "email": "priya.menon@wharton.example",
+    "email": "priya.menon@wharton.upenn.edu",
     "firstName": "Priya",
     "lastName": "Menon",
     "phoneNumber": "44-20-5555-0105",
@@ -120,7 +120,7 @@
     "approved": true
   },
   {
-    "email": "marcus.thompson@wharton.example",
+    "email": "marcus.thompson@wharton.upenn.edu",
     "firstName": "Marcus",
     "lastName": "Thompson",
     "phoneNumber": "312-555-0106",
@@ -140,7 +140,7 @@
     "approved": true
   },
   {
-    "email": "elena.petrov@wharton.example",
+    "email": "elena.petrov@wharton.upenn.edu",
     "firstName": "Elena",
     "lastName": "Petrov",
     "phoneNumber": "49-30-5555-0107",
@@ -160,7 +160,7 @@
     "approved": true
   },
   {
-    "email": "ben.carter@wharton.example",
+    "email": "ben.carter@wharton.upenn.edu",
     "firstName": "Ben",
     "lastName": "Carter",
     "phoneNumber": "650-555-0108",
@@ -180,7 +180,7 @@
     "approved": true
   },
   {
-    "email": "lina.haddad@wharton.example",
+    "email": "lina.haddad@wharton.upenn.edu",
     "firstName": "Lina",
     "lastName": "Haddad",
     "phoneNumber": "971-4-555-0109",
@@ -200,7 +200,7 @@
     "approved": true
   },
   {
-    "email": "nora.sullivan@wharton.example",
+    "email": "nora.sullivan@wharton.upenn.edu",
     "firstName": "Nora",
     "lastName": "Sullivan",
     "phoneNumber": "617-555-0110",
@@ -220,7 +220,7 @@
     "approved": true
   },
   {
-    "email": "kenji.watanabe@wharton.example",
+    "email": "kenji.watanabe@wharton.upenn.edu",
     "firstName": "Kenji",
     "lastName": "Watanabe",
     "phoneNumber": "81-3-5555-0111",
@@ -240,7 +240,7 @@
     "approved": true
   },
   {
-    "email": "amanda.ross@wharton.example",
+    "email": "amanda.ross@wharton.upenn.edu",
     "firstName": "Amanda",
     "lastName": "Ross",
     "phoneNumber": "310-555-0112",
@@ -260,7 +260,7 @@
     "approved": true
   },
   {
-    "email": "omar.alvarez@wharton.example",
+    "email": "omar.alvarez@wharton.upenn.edu",
     "firstName": "Omar",
     "lastName": "Alvarez",
     "phoneNumber": "52-55-5555-0113",
@@ -280,7 +280,7 @@
     "approved": true
   },
   {
-    "email": "rachel.kim@wharton.example",
+    "email": "rachel.kim@wharton.upenn.edu",
     "firstName": "Rachel",
     "lastName": "Kim",
     "phoneNumber": "713-555-0114",
@@ -300,7 +300,7 @@
     "approved": true
   },
   {
-    "email": "victor.nguyen@wharton.example",
+    "email": "victor.nguyen@wharton.upenn.edu",
     "firstName": "Victor",
     "lastName": "Nguyen",
     "phoneNumber": "714-555-0115",
@@ -320,7 +320,7 @@
     "approved": true
   },
   {
-    "email": "fatima.diop@wharton.example",
+    "email": "fatima.diop@wharton.upenn.edu",
     "firstName": "Fatima",
     "lastName": "Diop",
     "phoneNumber": "221-33-555-0116",
@@ -340,7 +340,7 @@
     "approved": true
   },
   {
-    "email": "gregory.wallace@wharton.example",
+    "email": "gregory.wallace@wharton.upenn.edu",
     "firstName": "Gregory",
     "lastName": "Wallace",
     "phoneNumber": "404-555-0117",

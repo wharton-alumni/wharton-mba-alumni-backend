@@ -21,12 +21,12 @@ SEED_DATA_ENABLED=true mvn spring-boot:run
 
 All seeded users use password `password`.
 
-- `admin@wharton.example`
-- `maya.chen@wharton.example`
-- `diego.ramirez@wharton.example`
-- `sarah.okafor@wharton.example`
-- `jonathan.lee@wharton.example`
-- `priya.menon@wharton.example`
+- `admin@wharton.upenn.edu`
+- `maya.chen@wharton.upenn.edu`
+- `diego.ramirez@wharton.upenn.edu`
+- `sarah.okafor@wharton.upenn.edu`
+- `jonathan.lee@wharton.upenn.edu`
+- `priya.menon@wharton.upenn.edu`
 
 ## Reseed demo data
 

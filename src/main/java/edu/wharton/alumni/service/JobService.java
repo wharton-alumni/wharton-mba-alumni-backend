@@ -40,6 +40,7 @@ public class JobService {
                 request.company(),
                 request.location(),
                 request.externalLink(),
+                request.applicationLink(),
                 request.description(),
                 poster.id(),
                 poster.firstName() + " " + poster.lastName(),

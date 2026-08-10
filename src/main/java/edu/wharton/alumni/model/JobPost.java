@@ -22,6 +22,7 @@ public class JobPost {
     private String company;
     private String location;
     private String externalLink;
+    private String applicationLink;
     @Column(length = 5000)
     private String description;
     private UUID postedById;
@@ -31,13 +32,14 @@ public class JobPost {
     protected JobPost() {
     }
 
-    public JobPost(UUID id, String title, String company, String location, String externalLink, String description,
-                   UUID postedById, String postedByName, Instant createdAt) {
+    public JobPost(UUID id, String title, String company, String location, String externalLink, String applicationLink,
+                   String description, UUID postedById, String postedByName, Instant createdAt) {
         this.id = id;
         this.title = title;
         this.company = company;
         this.location = location;
         this.externalLink = externalLink;
+        this.applicationLink = applicationLink;
         this.description = description;
         this.postedById = postedById;
         this.postedByName = postedByName;

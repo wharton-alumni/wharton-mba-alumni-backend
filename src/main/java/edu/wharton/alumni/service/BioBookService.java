@@ -42,7 +42,11 @@ public class BioBookService {
 
     public BioBookLookupResponse lookup(String email) {
         Optional<BioBookProfile> profile = findProfileByEmail(email);
-        return new BioBookLookupResponse(profile.isPresent(), profile.orElse(null));
+        return new BioBookLookupResponse(
+                profile.isPresent(),
+                profile.isPresent() && alumniService.findByEmail(email).isPresent(),
+                profile.orElse(null)
+        );
     }
 
     public List<BioBookProfile> findAllBioBookProfiles() {

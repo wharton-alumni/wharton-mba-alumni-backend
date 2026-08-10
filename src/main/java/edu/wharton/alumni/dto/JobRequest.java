@@ -7,6 +7,7 @@ public record JobRequest(
         @NotBlank String company,
         String location,
         String externalLink,
+        String applicationLink,
         @NotBlank String description
 ) {
 }

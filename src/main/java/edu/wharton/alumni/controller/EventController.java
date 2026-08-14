@@ -1,6 +1,7 @@
 package edu.wharton.alumni.controller;
 
 import edu.wharton.alumni.dto.EventRequest;
+import edu.wharton.alumni.dto.EventParticipantResponse;
 import edu.wharton.alumni.dto.EventRsvpRequest;
 import edu.wharton.alumni.dto.EventRsvpResponse;
 import edu.wharton.alumni.model.AlumniEvent;
@@ -46,6 +47,11 @@ public class EventController {
     @GetMapping("/rsvps/me")
     public List<EventRsvpResponse> myRsvps(@AuthenticationPrincipal JwtUser user) {
         return rsvpService.findForProfile(user.id());
+    }
+
+    @GetMapping("/{eventId}/participants")
+    public List<EventParticipantResponse> participants(@PathVariable UUID eventId) {
+        return rsvpService.participants(eventId);
     }
 
     @PutMapping("/{eventId}/rsvp")

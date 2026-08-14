@@ -13,5 +13,7 @@ public interface EventRsvpRepository extends JpaRepository<EventRsvp, UUID> {
 
     List<EventRsvp> findByProfileId(UUID profileId);
 
+    List<EventRsvp> findByEventIdAndStatus(UUID eventId, EventRsvpStatus status);
+
     long countByEventIdAndStatus(UUID eventId, EventRsvpStatus status);
 }

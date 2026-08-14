@@ -62,6 +62,12 @@ public class AlumniService {
         return profile.withoutPassword();
     }
 
+    public List<AlumniProfile> findPublicByIds(List<UUID> ids) {
+        return profileRepository.findByIdInAndApprovedTrue(ids).stream()
+                .map(AlumniProfile::withoutPassword)
+                .toList();
+    }
+
     public AlumniProfile save(AlumniProfile profile) {
         return profileRepository.save(profile);
     }

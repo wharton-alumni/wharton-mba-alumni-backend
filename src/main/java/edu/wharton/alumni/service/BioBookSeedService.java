@@ -65,9 +65,7 @@ public class BioBookSeedService {
             String profileJson = objectMapper.writeValueAsString(record.profile());
             for (String emailHash : record.emailHashes()) {
                 UUID id = UUID.nameUUIDFromBytes(emailHash.getBytes(StandardCharsets.UTF_8));
-                if (!bioBookClaimRepository.existsById(id)) {
-                    bioBookClaimRepository.save(new BioBookClaim(id, emailHash, profileJson));
-                }
+                bioBookClaimRepository.save(new BioBookClaim(id, emailHash, profileJson));
             }
         }
     }

@@ -35,18 +35,24 @@ public class OnboardingService {
     private final AuthService authService;
     private final OnboardingCodeRepository codeRepository;
     private final RateLimitService rateLimitService;
+    private final VerificationEmailService verificationEmailService;
     private final long codeTtlMinutes;
+    private final boolean exposeDevCode;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public OnboardingService(BioBookService bioBookService, AlumniService alumniService, AuthService authService,
                              OnboardingCodeRepository codeRepository, RateLimitService rateLimitService,
-                             @Value("${app.auth.verification-code-ttl-minutes}") long codeTtlMinutes) {
+                             VerificationEmailService verificationEmailService,
+                             @Value("${app.auth.verification-code-ttl-minutes}") long codeTtlMinutes,
+                             @Value("${app.auth.expose-dev-code}") boolean exposeDevCode) {
         this.bioBookService = bioBookService;
         this.alumniService = alumniService;
         this.authService = authService;
         this.codeRepository = codeRepository;
         this.rateLimitService = rateLimitService;
+        this.verificationEmailService = verificationEmailService;
         this.codeTtlMinutes = codeTtlMinutes;
+        this.exposeDevCode = exposeDevCode;
     }
 
     public OnboardingLookupResponse lookup(OnboardingLookupRequest request) {
@@ -80,7 +86,8 @@ public class OnboardingService {
                 null,
                 Instant.now()
         ));
-        return new SendCodeResponse("Verification code sent.", code);
+        verificationEmailService.sendVerificationCode(email, code, codeTtlMinutes);
+        return new SendCodeResponse("Verification code sent.", exposeDevCode ? code : null);
     }
 
     public MessageResponse verifyCode(VerifyCodeRequest request) {

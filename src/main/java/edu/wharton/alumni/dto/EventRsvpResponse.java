@@ -3,6 +3,7 @@ package edu.wharton.alumni.dto;
 import edu.wharton.alumni.model.EventRsvpStatus;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record EventRsvpResponse(
@@ -11,6 +12,7 @@ public record EventRsvpResponse(
         EventRsvpStatus status,
         long joinedCount,
         long interestedCount,
-        Instant updatedAt
+        Instant updatedAt,
+        List<EventParticipantResponse> participants
 ) {
 }

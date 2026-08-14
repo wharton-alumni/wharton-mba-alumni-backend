@@ -30,7 +30,7 @@ public class BioBookSeedService {
 
     @PostConstruct
     public void seedOnStartup() {
-        if (seedEnabled && bioBookClaimRepository.count() == 0) {
+        if (seedEnabled) {
             seedMissing();
         }
     }

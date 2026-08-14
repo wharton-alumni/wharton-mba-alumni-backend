@@ -87,6 +87,7 @@ public class AlumniService {
                 request.willingToMentor() == null ? current.willingToMentor() : request.willingToMentor(),
                 request.hiring() == null ? current.hiring() : request.hiring(),
                 valueOr(request.avatarUrl(), current.avatarUrl()),
+                valueOr(request.bioBookProfileJson(), current.bioBookProfileJson()),
                 current.role(),
                 current.approved(),
                 current.createdAt()
@@ -118,6 +119,7 @@ public class AlumniService {
                 seed.willingToMentor(),
                 seed.hiring(),
                 seed.avatarUrl(),
+                null,
                 seed.role(),
                 seed.approved(),
                 Instant.now().minusSeconds((long) index * 86400)

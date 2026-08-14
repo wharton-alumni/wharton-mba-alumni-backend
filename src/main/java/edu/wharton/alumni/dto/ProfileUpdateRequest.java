@@ -15,6 +15,7 @@ public record ProfileUpdateRequest(
         String bio,
         Boolean willingToMentor,
         Boolean hiring,
-        String avatarUrl
+        String avatarUrl,
+        String bioBookProfileJson
 ) {
 }

@@ -52,7 +52,11 @@ public class AlumniProfile {
 
     private boolean willingToMentor;
     private boolean hiring;
+    @Column(length = 1000000)
     private String avatarUrl;
+
+    @Column(length = 20000)
+    private String bioBookProfileJson;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -70,7 +74,7 @@ public class AlumniProfile {
                          String phoneNumber, CohortCampus cohortCampus, int classYear, String currentTitle,
                          String currentCompany, String industry, String city, String stateCountry,
                          String linkedinUrl, String bio, boolean willingToMentor, boolean hiring,
-                         String avatarUrl, Role role, boolean approved, Instant createdAt) {
+                         String avatarUrl, String bioBookProfileJson, Role role, boolean approved, Instant createdAt) {
         this.id = id;
         this.email = email;
         this.passwordHash = passwordHash;
@@ -89,6 +93,7 @@ public class AlumniProfile {
         this.willingToMentor = willingToMentor;
         this.hiring = hiring;
         this.avatarUrl = avatarUrl;
+        this.bioBookProfileJson = bioBookProfileJson;
         this.role = role;
         this.approved = approved;
         this.createdAt = createdAt;
@@ -97,13 +102,13 @@ public class AlumniProfile {
     public AlumniProfile withoutPassword() {
         return new AlumniProfile(id, email, null, firstName, lastName, phoneNumber, cohortCampus, classYear,
                 currentTitle, currentCompany, industry, city, stateCountry, linkedinUrl, bio, willingToMentor,
-                hiring, avatarUrl, role, approved, createdAt);
+                hiring, avatarUrl, bioBookProfileJson, role, approved, createdAt);
     }
 
     public AlumniProfile withPasswordHash(String passwordHash) {
         return new AlumniProfile(id, email, passwordHash, firstName, lastName, phoneNumber, cohortCampus, classYear,
                 currentTitle, currentCompany, industry, city, stateCountry, linkedinUrl, bio, willingToMentor,
-                hiring, avatarUrl, role, approved, createdAt);
+                hiring, avatarUrl, bioBookProfileJson, role, approved, createdAt);
     }
 
     public UUID id() {
@@ -176,6 +181,10 @@ public class AlumniProfile {
 
     public String avatarUrl() {
         return avatarUrl;
+    }
+
+    public String bioBookProfileJson() {
+        return bioBookProfileJson;
     }
 
     public Role role() {

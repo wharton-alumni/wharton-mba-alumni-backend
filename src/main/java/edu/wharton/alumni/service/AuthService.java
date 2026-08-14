@@ -85,6 +85,7 @@ public class AuthService {
                 request.willingToMentor(),
                 request.hiring(),
                 request.avatarUrl(),
+                request.bioBookProfileJson(),
                 Role.ALUMNI,
                 true,
                 Instant.now()

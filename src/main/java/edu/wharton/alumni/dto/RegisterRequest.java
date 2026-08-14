@@ -25,6 +25,7 @@ public record RegisterRequest(
         @NotBlank String bio,
         boolean willingToMentor,
         boolean hiring,
-        String avatarUrl
+        String avatarUrl,
+        String bioBookProfileJson
 ) {
 }

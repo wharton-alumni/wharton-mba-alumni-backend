@@ -121,7 +121,8 @@ public class BioBookService {
                 bio,
                 bioBookProfile.willingToMentor(),
                 false,
-                null,
+                valueOr(bioBookProfile.headshotProfessional(), null),
+                toProfileJson(bioBookProfile),
                 Role.ALUMNI,
                 true,
                 Instant.now()
@@ -138,6 +139,14 @@ public class BioBookService {
             return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 is not available.", exception);
+        }
+    }
+
+    private String toProfileJson(BioBookProfile profile) {
+        try {
+            return objectMapper.writeValueAsString(profile);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Unable to store BioBook profile details.", exception);
         }
     }
 

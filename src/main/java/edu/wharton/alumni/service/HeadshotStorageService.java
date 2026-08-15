@@ -27,7 +27,7 @@ public class HeadshotStorageService {
                                   @Value("${app.headshots.access-key-id}") String accessKeyId,
                                   @Value("${app.headshots.secret-access-key}") String secretAccessKey,
                                   @Value("${app.headshots.region}") String region,
-                                  @Value("${app.headshots.path-style}") boolean pathStyle) {
+                                  @Value("${app.headshots.url-style}") String urlStyle) {
         this.bucket = bucket;
         this.s3Client = isBlank(bucket) || isBlank(endpoint) || isBlank(accessKeyId) || isBlank(secretAccessKey)
                 ? null
@@ -38,7 +38,7 @@ public class HeadshotStorageService {
                                 AwsBasicCredentials.create(accessKeyId, secretAccessKey)
                         ))
                         .serviceConfiguration(S3Configuration.builder()
-                                .pathStyleAccessEnabled(pathStyle)
+                                .pathStyleAccessEnabled(usesPathStyle(urlStyle))
                                 .build())
                         .build();
     }
@@ -79,6 +79,10 @@ public class HeadshotStorageService {
 
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    private boolean usesPathStyle(String value) {
+        return "path".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value);
     }
 
     public record StoredHeadshot(byte[] bytes, String contentType) {

@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -12,10 +13,12 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.net.URI;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class HeadshotStorageService {
@@ -68,6 +71,32 @@ public class HeadshotStorageService {
         }
     }
 
+    public StoredHeadshotUpload upload(UUID userId, String originalFilename, String contentType, byte[] bytes) {
+        if (s3Client == null) {
+            throw new IllegalStateException("Headshot bucket is not configured.");
+        }
+        if (!isAllowedUpload(contentType, bytes)) {
+            throw new IllegalArgumentException("Please upload a JPEG, PNG, or WebP image under 2 MB.");
+        }
+
+        String extension = extensionFor(contentType, originalFilename);
+        String key = "headshots/uploads/" + userId + "-" + UUID.randomUUID() + extension;
+        s3Client.putObject(
+                PutObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(key)
+                        .contentType(contentType)
+                        .cacheControl("public, max-age=2592000, immutable")
+                        .build(),
+                RequestBody.fromBytes(bytes)
+        );
+
+        return new StoredHeadshotUpload(
+                key,
+                "/api/headshots/" + key.substring("headshots/".length())
+        );
+    }
+
     private boolean isAllowedHeadshotKey(String key) {
         return key != null
                 && !key.isBlank()
@@ -85,6 +114,31 @@ public class HeadshotStorageService {
         return "path".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value);
     }
 
+    private boolean isAllowedUpload(String contentType, byte[] bytes) {
+        return bytes != null
+                && bytes.length > 0
+                && bytes.length <= 2_000_000
+                && ("image/jpeg".equalsIgnoreCase(contentType)
+                || "image/png".equalsIgnoreCase(contentType)
+                || "image/webp".equalsIgnoreCase(contentType));
+    }
+
+    private String extensionFor(String contentType, String filename) {
+        if ("image/png".equalsIgnoreCase(contentType)) {
+            return ".png";
+        }
+        if ("image/webp".equalsIgnoreCase(contentType)) {
+            return ".webp";
+        }
+        if (filename != null && filename.toLowerCase().endsWith(".jpeg")) {
+            return ".jpeg";
+        }
+        return ".jpg";
+    }
+
     public record StoredHeadshot(byte[] bytes, String contentType) {
+    }
+
+    public record StoredHeadshotUpload(String key, String url) {
     }
 }

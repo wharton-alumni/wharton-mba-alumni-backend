@@ -55,7 +55,7 @@ public class AlumniProfile {
     @Column(length = 1000000)
     private String avatarUrl;
 
-    @Column(length = 20000)
+    @Column(columnDefinition = "text")
     private String bioBookProfileJson;
 
     @Enumerated(EnumType.STRING)

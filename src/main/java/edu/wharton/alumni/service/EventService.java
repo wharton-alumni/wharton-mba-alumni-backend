@@ -9,8 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -19,17 +21,28 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class EventService {
     private final AlumniEventRepository eventRepository;
     private final AlumniService alumniService;
+    private final WhartonEventScraperService whartonEventScraperService;
 
-    public EventService(AlumniEventRepository eventRepository, AlumniService alumniService) {
+    public EventService(AlumniEventRepository eventRepository, AlumniService alumniService,
+                        WhartonEventScraperService whartonEventScraperService) {
         this.eventRepository = eventRepository;
         this.alumniService = alumniService;
+        this.whartonEventScraperService = whartonEventScraperService;
     }
 
     public List<AlumniEvent> findByStatus(EventStatus status) {
+        List<AlumniEvent> savedEvents;
         if (status == null) {
-            return eventRepository.findAllByOrderByCreatedAtDesc();
+            savedEvents = eventRepository.findAllByOrderByCreatedAtDesc();
+        } else {
+            savedEvents = eventRepository.findByStatusOrderByCreatedAtDesc(status);
         }
-        return eventRepository.findByStatusOrderByCreatedAtDesc(status);
+        if (status != null && status != EventStatus.APPROVED) {
+            return savedEvents;
+        }
+        return Stream.concat(savedEvents.stream(), whartonEventScraperService.upcomingEvents().stream())
+                .sorted(Comparator.comparing(AlumniEvent::eventDate, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
     }
 
     public AlumniEvent submit(EventRequest request, UUID postedById) {

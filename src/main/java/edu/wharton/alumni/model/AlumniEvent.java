@@ -32,6 +32,8 @@ public class AlumniEvent {
     private Instant eventDate;
     private String location;
     private String externalLink;
+
+    @Column(length = 2000000)
     private String imageUrl;
 
     @Column(nullable = false)

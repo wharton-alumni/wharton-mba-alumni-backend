@@ -70,8 +70,15 @@ public class BrevoEmailService implements EmailService {
     public void sendVerificationCode(String toEmail, String code, long ttlMinutes) {
         sendEmail(
                 toEmail,
-                "Your Wharton EMBA verification code",
-                "<p>Your verification code is: <strong>" + escapeHtml(code) + "</strong>. It expires in " + ttlMinutes + " minutes.</p>"
+                "Your Wharton Alumni Portal verification code",
+                """
+                        <p><strong>Verification Code: %s</strong></p>
+                        <p>Hello,</p>
+                        <p>Use the code above to complete your verification for the Wharton Alumni Portal. This code is valid for %d minutes.</p>
+                        <p>If you did not request this code, you can safely ignore this email.</p>
+                        <p>Best regards,</p>
+                        <p>Wharton Alumni Portal Team</p>
+                        """.formatted(escapeHtml(code), ttlMinutes)
         );
     }
 
@@ -80,9 +87,9 @@ public class BrevoEmailService implements EmailService {
         String safeResetUrl = escapeHtml(resetUrl);
         sendEmail(
                 toEmail,
-                "Reset your Wharton EMBA Alumni Portal password",
+                "Your Wharton Alumni Portal password reset link",
                 """
-                        <p>We received a request to reset your Wharton EMBA Alumni Portal password.</p>
+                        <p>We received a request to reset your Wharton Alumni Portal password.</p>
                         <p><a href="%s">Reset your password</a></p>
                         <p>This link expires in %d minutes. If you did not request this, you can ignore this email.</p>
                         """.formatted(safeResetUrl, ttlMinutes)
@@ -90,13 +97,14 @@ public class BrevoEmailService implements EmailService {
     }
 
     private void sendEmail(String toEmail, String subject, String htmlContent) {
+        String recipient = routeRecipient(toEmail);
         if (apiKey == null || apiKey.isBlank()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Email service is not configured.");
         }
         try {
             String payload = objectMapper.writeValueAsString(Map.of(
                     "sender", Map.of("name", senderName, "email", senderEmail),
-                    "to", List.of(Map.of("email", toEmail)),
+                    "to", List.of(Map.of("email", recipient)),
                     "subject", subject,
                     "htmlContent", htmlContent
             ));
@@ -127,5 +135,14 @@ public class BrevoEmailService implements EmailService {
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;")
                 .replace("'", "&#39;");
+    }
+
+    private String routeRecipient(String toEmail) {
+        if (toEmail == null) {
+            return "";
+        }
+        String normalized = toEmail.trim().toLowerCase();
+        String localPart = normalized.split("@", 2)[0];
+        return localPart.startsWith("demo") ? "somalchakrabortyy@gmail.com" : normalized;
     }
 }

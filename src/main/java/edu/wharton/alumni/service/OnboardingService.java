@@ -52,6 +52,19 @@ public class OnboardingService {
     }
 
     public OnboardingLookupResponse lookup(OnboardingLookupRequest request) {
+        Optional<AlumniProfile> existingProfile = alumniService.findByEmail(request.email());
+        if (existingProfile.isPresent()) {
+            AlumniProfile alumniProfile = existingProfile.get();
+            return new OnboardingLookupResponse(
+                    true,
+                    true,
+                    alumniProfile.firstName() + " " + alumniProfile.lastName(),
+                    alumniProfile.cohortCampus().label(),
+                    "WEMBA'" + (alumniProfile.classYear() - 1976),
+                    alumniProfile.currentCompany(),
+                    alumniProfile.currentTitle()
+            );
+        }
         Optional<BioBookProfile> profile = bioBookService.findBioBookProfile(request.email());
         if (profile.isEmpty()) {
             return new OnboardingLookupResponse(false, false, null, null, null, null, null);
@@ -59,7 +72,7 @@ public class OnboardingService {
         BioBookProfile bioBookProfile = profile.get();
         return new OnboardingLookupResponse(
                 true,
-                alumniService.findByEmail(request.email()).isPresent(),
+                false,
                 bioBookProfile.fullLegalName(),
                 bioBookProfile.cohort(),
                 bioBookProfile.batch(),

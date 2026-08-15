@@ -6,9 +6,13 @@ import edu.wharton.alumni.dto.BioBookClaimResponse;
 import edu.wharton.alumni.dto.BioBookLookupResponse;
 import edu.wharton.alumni.model.AlumniProfile;
 import edu.wharton.alumni.model.BioBookClaim;
+import edu.wharton.alumni.model.BioBookClaimEmail;
+import edu.wharton.alumni.model.BioBookDirectoryProfile;
 import edu.wharton.alumni.model.BioBookProfile;
 import edu.wharton.alumni.model.Role;
+import edu.wharton.alumni.repository.BioBookClaimEmailRepository;
 import edu.wharton.alumni.repository.BioBookClaimRepository;
+import edu.wharton.alumni.repository.BioBookDirectoryProfileRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -17,8 +21,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,13 +35,19 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class BioBookService {
     private final AlumniService alumniService;
     private final AuthService authService;
+    private final BioBookDirectoryProfileRepository directoryProfileRepository;
+    private final BioBookClaimEmailRepository claimEmailRepository;
     private final BioBookClaimRepository claimRepository;
     private final ObjectMapper objectMapper;
 
     public BioBookService(AlumniService alumniService, AuthService authService,
+                          BioBookDirectoryProfileRepository directoryProfileRepository,
+                          BioBookClaimEmailRepository claimEmailRepository,
                           BioBookClaimRepository claimRepository, ObjectMapper objectMapper) {
         this.alumniService = alumniService;
         this.authService = authService;
+        this.directoryProfileRepository = directoryProfileRepository;
+        this.claimEmailRepository = claimEmailRepository;
         this.claimRepository = claimRepository;
         this.objectMapper = objectMapper;
     }
@@ -50,13 +62,26 @@ public class BioBookService {
     }
 
     public List<BioBookProfile> findAllBioBookProfiles() {
-        return claimRepository.findAll().stream()
+        Map<String, BioBookProfile> profilesById = new LinkedHashMap<>();
+        directoryProfileRepository.findAll().stream()
                 .map(this::toBioBookProfile)
+                .forEach(profile -> profilesById.put(profileKey(profile), profile));
+        claimRepository.findAll().stream()
+                .map(this::toBioBookProfile)
+                .forEach(profile -> profilesById.putIfAbsent(profileKey(profile), profile));
+
+        return profilesById.values().stream()
                 .sorted((left, right) -> valueOr(left.fullLegalName(), "").compareToIgnoreCase(valueOr(right.fullLegalName(), "")))
                 .toList();
     }
 
     public Optional<BioBookProfile> findBioBookProfileById(String id) {
+        Optional<BioBookProfile> normalizedProfile = directoryProfileRepository.findBySlug(id)
+                .map(this::toBioBookProfile);
+        if (normalizedProfile.isPresent()) {
+            return normalizedProfile;
+        }
+
         return findAllBioBookProfiles().stream()
                 .filter(profile -> profile.id() != null && profile.id().equals(id))
                 .findFirst();
@@ -80,8 +105,23 @@ public class BioBookService {
 
     public Optional<BioBookProfile> findBioBookProfile(String email) {
         String hash = sha256(email.trim().toLowerCase(Locale.ROOT));
+        Optional<BioBookProfile> normalizedProfile = claimEmailRepository.findByEmailHash(hash)
+                .map(BioBookClaimEmail::profile)
+                .map(this::toBioBookProfile);
+        if (normalizedProfile.isPresent()) {
+            return normalizedProfile;
+        }
+
         return claimRepository.findByEmailHash(hash)
                 .map(this::toBioBookProfile);
+    }
+
+    private BioBookProfile toBioBookProfile(BioBookDirectoryProfile profile) {
+        try {
+            return objectMapper.readValue(profile.profileJson(), BioBookProfile.class);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Unable to read BioBook profile " + profile.slug(), exception);
+        }
     }
 
     private BioBookProfile toBioBookProfile(BioBookClaim claim) {
@@ -90,6 +130,14 @@ public class BioBookService {
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Unable to read BioBook profile for claim " + claim.id(), exception);
         }
+    }
+
+    private String profileKey(BioBookProfile profile) {
+        String id = profile.id();
+        if (id != null && !id.isBlank()) {
+            return id;
+        }
+        return valueOr(profile.batch(), "unknown") + ":" + valueOr(profile.fullLegalName(), "").toLowerCase(Locale.ROOT);
     }
 
     private AlumniProfile toAlumniProfile(String email, String password, BioBookProfile bioBookProfile) {

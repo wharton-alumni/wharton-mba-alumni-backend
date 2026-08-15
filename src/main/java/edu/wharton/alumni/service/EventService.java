@@ -46,7 +46,9 @@ public class EventService {
                 poster.id(),
                 poster.firstName() + " " + poster.lastName(),
                 poster.cohortCampus(),
-                EventStatus.PENDING,
+                Boolean.TRUE.equals(request.onlyMyBatchCanJoin()),
+                Boolean.TRUE.equals(request.onlyMyBatchCanJoin()) ? poster.classYear() : null,
+                EventStatus.APPROVED,
                 Instant.now()
         );
         return eventRepository.save(event);
@@ -60,7 +62,8 @@ public class EventService {
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Event not found."));
         AlumniEvent updated = new AlumniEvent(current.id(), current.title(), current.description(), current.category(),
                 current.eventDate(), current.location(), current.externalLink(), current.imageUrl(), current.postedById(),
-                current.postedByName(), current.postedByCohort(), status, current.createdAt());
+                current.postedByName(), current.postedByCohort(), current.onlyMyBatchCanJoin(),
+                current.allowedClassYear(), status, current.createdAt());
         return eventRepository.save(updated);
     }
 
@@ -72,7 +75,7 @@ public class EventService {
             UUID id = UUID.nameUUIDFromBytes((seed.title() + seed.postedByEmail()).getBytes());
             eventRepository.save(new AlumniEvent(id, seed.title(), seed.description(), seed.category(), seed.eventDate(),
                     seed.location(), seed.externalLink(), seed.imageUrl(), poster.id(),
-                    poster.firstName() + " " + poster.lastName(), poster.cohortCampus(), seed.status(),
+                    poster.firstName() + " " + poster.lastName(), poster.cohortCampus(), false, null, seed.status(),
                     Instant.now().minusSeconds((long) index * 3600)));
         }
     }

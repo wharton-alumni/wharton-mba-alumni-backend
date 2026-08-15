@@ -15,6 +15,7 @@ public record EventRequest(
         @NotBlank String location,
         String externalLink,
         String imageUrl,
-        UUID postedById
+        UUID postedById,
+        Boolean onlyMyBatchCanJoin
 ) {
 }

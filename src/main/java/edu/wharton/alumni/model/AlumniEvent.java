@@ -42,6 +42,10 @@ public class AlumniEvent {
     @Enumerated(EnumType.STRING)
     private CohortCampus postedByCohort;
 
+    private boolean onlyMyBatchCanJoin;
+
+    private Integer allowedClassYear;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EventStatus status;
@@ -54,7 +58,8 @@ public class AlumniEvent {
 
     public AlumniEvent(UUID id, String title, String description, EventCategory category, Instant eventDate,
                        String location, String externalLink, String imageUrl, UUID postedById, String postedByName,
-                       CohortCampus postedByCohort, EventStatus status, Instant createdAt) {
+                       CohortCampus postedByCohort, boolean onlyMyBatchCanJoin, Integer allowedClassYear,
+                       EventStatus status, Instant createdAt) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -66,6 +71,8 @@ public class AlumniEvent {
         this.postedById = postedById;
         this.postedByName = postedByName;
         this.postedByCohort = postedByCohort;
+        this.onlyMyBatchCanJoin = onlyMyBatchCanJoin;
+        this.allowedClassYear = allowedClassYear;
         this.status = status;
         this.createdAt = createdAt;
     }
@@ -112,6 +119,14 @@ public class AlumniEvent {
 
     public CohortCampus postedByCohort() {
         return postedByCohort;
+    }
+
+    public boolean onlyMyBatchCanJoin() {
+        return onlyMyBatchCanJoin;
+    }
+
+    public Integer allowedClassYear() {
+        return allowedClassYear;
     }
 
     public EventStatus status() {

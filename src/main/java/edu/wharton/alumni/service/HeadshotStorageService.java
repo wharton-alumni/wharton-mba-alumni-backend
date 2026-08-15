@@ -76,7 +76,7 @@ public class HeadshotStorageService {
             throw new IllegalStateException("Headshot bucket is not configured.");
         }
         if (!isAllowedUpload(contentType, bytes)) {
-            throw new IllegalArgumentException("Please upload a JPEG, PNG, or WebP image under 2 MB.");
+            throw new IllegalArgumentException("Please upload a JPEG, PNG, or WebP image under 1 MB.");
         }
 
         String extension = extensionFor(contentType, originalFilename);
@@ -117,7 +117,7 @@ public class HeadshotStorageService {
     private boolean isAllowedUpload(String contentType, byte[] bytes) {
         return bytes != null
                 && bytes.length > 0
-                && bytes.length <= 2_000_000
+                && bytes.length <= 1_000_000
                 && ("image/jpeg".equalsIgnoreCase(contentType)
                 || "image/png".equalsIgnoreCase(contentType)
                 || "image/webp".equalsIgnoreCase(contentType));

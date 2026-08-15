@@ -2,6 +2,7 @@ package edu.wharton.alumni.service;
 
 import edu.wharton.alumni.dto.EventParticipantResponse;
 import edu.wharton.alumni.dto.EventRsvpResponse;
+import edu.wharton.alumni.model.AlumniEvent;
 import edu.wharton.alumni.model.AlumniProfile;
 import edu.wharton.alumni.model.EventRsvp;
 import edu.wharton.alumni.model.EventRsvpStatus;
@@ -17,6 +18,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
@@ -39,8 +41,14 @@ public class EventRsvpService {
     }
 
     public EventRsvpResponse update(UUID eventId, UUID profileId, EventRsvpStatus status) {
-        if (!eventRepository.existsById(eventId)) {
-            throw new ResponseStatusException(NOT_FOUND, "Event not found.");
+        AlumniEvent event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Event not found."));
+
+        if (status == EventRsvpStatus.JOINED && event.onlyMyBatchCanJoin()) {
+            AlumniProfile joiner = alumniService.findInternal(profileId);
+            if (event.allowedClassYear() == null || joiner.classYear() != event.allowedClassYear()) {
+                throw new ResponseStatusException(FORBIDDEN, "Only members of the host batch can join this event.");
+            }
         }
 
         EventRsvp current = rsvpRepository.findByEventIdAndProfileId(eventId, profileId)

@@ -6,3 +6,4 @@ src/main/resources/seed/*biobook*.json
 *.xlsx
 local-maintenance/
 src/main/java/edu/wharton/alumni/controller/LocalBioBookMaintenanceController.java
+/secrets/

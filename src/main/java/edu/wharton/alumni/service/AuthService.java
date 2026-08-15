@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.nio.charset.StandardCharsets;
+import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -34,18 +35,24 @@ public class AuthService {
     private final JwtService jwtService;
     private final PasswordResetTokenRepository resetTokenRepository;
     private final RateLimitService rateLimitService;
+    private final EmailService emailService;
     private final long resetTokenTtlMinutes;
+    private final String publicBaseUrl;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public AuthService(AlumniService alumniService, PasswordEncoder passwordEncoder, JwtService jwtService,
                        PasswordResetTokenRepository resetTokenRepository, RateLimitService rateLimitService,
-                       @Value("${app.auth.reset-token-ttl-minutes}") long resetTokenTtlMinutes) {
+                       EmailService emailService,
+                       @Value("${app.auth.reset-token-ttl-minutes}") long resetTokenTtlMinutes,
+                       @Value("${app.public-base-url}") String publicBaseUrl) {
         this.alumniService = alumniService;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.resetTokenRepository = resetTokenRepository;
         this.rateLimitService = rateLimitService;
+        this.emailService = emailService;
         this.resetTokenTtlMinutes = resetTokenTtlMinutes;
+        this.publicBaseUrl = publicBaseUrl;
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -113,6 +120,11 @@ public class AuthService {
                 null,
                 Instant.now()
         ));
+        emailService.sendPasswordResetLink(
+                profile.get().email(),
+                resetUrl(token),
+                resetTokenTtlMinutes
+        );
         return Optional.of(token);
     }
 
@@ -148,6 +160,13 @@ public class AuthService {
         } catch (Exception exception) {
             throw new IllegalStateException("Unable to hash token.", exception);
         }
+    }
+
+    private String resetUrl(String token) {
+        String baseUrl = publicBaseUrl.endsWith("/")
+                ? publicBaseUrl.substring(0, publicBaseUrl.length() - 1)
+                : publicBaseUrl;
+        return baseUrl + "/reset-password?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
     }
 
     private String normalize(String email) {

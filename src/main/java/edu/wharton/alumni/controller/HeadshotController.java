@@ -28,9 +28,10 @@ public class HeadshotController {
     public ResponseEntity<byte[]> getHeadshot(HttpServletRequest request) {
         String uri = request.getRequestURI();
         int prefixIndex = uri.indexOf(PREFIX);
-        String key = prefixIndex >= 0
+        String requestedPath = prefixIndex >= 0
                 ? URLDecoder.decode(uri.substring(prefixIndex + PREFIX.length()), StandardCharsets.UTF_8)
                 : "";
+        String key = "headshots/" + requestedPath;
 
         HeadshotStorageService.StoredHeadshot headshot = headshotStorageService.find(key)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Headshot not found."));

@@ -38,6 +38,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login", "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
                         .requestMatchers("/api/auth/register").permitAll()
                         .requestMatchers("/api/auth/biobook/**").permitAll()
+                        .requestMatchers("/api/headshots/**").permitAll()
                         .requestMatchers("/api/onboarding/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

@@ -16,11 +16,19 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class BrevoEmailService implements EmailService {
+    private static final List<String> DEMO_RECIPIENTS = List.of(
+            "somalchakraborty@gmail.com",
+            "akashshergill25@gmail.com"
+    );
+
     private final ObjectMapper objectMapper;
     private final String configuredApiKey;
     private final String apiKeyFile;
@@ -97,14 +105,14 @@ public class BrevoEmailService implements EmailService {
     }
 
     private void sendEmail(String toEmail, String subject, String htmlContent) {
-        String recipient = routeRecipient(toEmail);
+        List<String> recipients = routeRecipients(toEmail);
         if (apiKey == null || apiKey.isBlank()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Email service is not configured.");
         }
         try {
             String payload = objectMapper.writeValueAsString(Map.of(
                     "sender", Map.of("name", senderName, "email", senderEmail),
-                    "to", List.of(Map.of("email", recipient)),
+                    "to", recipients.stream().map(recipient -> Map.of("email", recipient)).toList(),
                     "subject", subject,
                     "htmlContent", htmlContent
             ));
@@ -137,12 +145,16 @@ public class BrevoEmailService implements EmailService {
                 .replace("'", "&#39;");
     }
 
-    private String routeRecipient(String toEmail) {
+    private List<String> routeRecipients(String toEmail) {
         if (toEmail == null) {
-            return "";
+            return List.of();
         }
         String normalized = toEmail.trim().toLowerCase();
         String localPart = normalized.split("@", 2)[0];
-        return localPart.startsWith("demo") ? "somalchakrabortyy@gmail.com" : normalized;
+        if (!localPart.startsWith("demo")) {
+            return List.of(normalized);
+        }
+        Set<String> recipients = new LinkedHashSet<>(DEMO_RECIPIENTS);
+        return new ArrayList<>(recipients);
     }
 }

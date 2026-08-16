@@ -24,16 +24,12 @@ import java.util.Set;
 
 @Service
 public class BrevoEmailService implements EmailService {
-    private static final List<String> DEMO_RECIPIENTS = List.of(
-            "somalchakraborty@gmail.com",
-            "akashshergill25@gmail.com"
-    );
-
     private final ObjectMapper objectMapper;
     private final String configuredApiKey;
     private final String apiKeyFile;
     private final String senderName;
     private final String senderEmail;
+    private final List<String> demoRecipients;
     private final HttpClient httpClient;
     private String apiKey;
 
@@ -42,13 +38,15 @@ public class BrevoEmailService implements EmailService {
             @Value("${app.email.brevo.api-key:}") String configuredApiKey,
             @Value("${app.email.brevo.api-key-file:}") String apiKeyFile,
             @Value("${app.email.sender.name}") String senderName,
-            @Value("${app.email.sender.email}") String senderEmail
+            @Value("${app.email.sender.email}") String senderEmail,
+            @Value("${app.email.demo-recipients:}") String demoRecipients
     ) {
         this.objectMapper = objectMapper;
         this.configuredApiKey = configuredApiKey;
         this.apiKeyFile = apiKeyFile;
         this.senderName = senderName;
         this.senderEmail = senderEmail;
+        this.demoRecipients = parseRecipients(demoRecipients);
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
@@ -154,7 +152,22 @@ public class BrevoEmailService implements EmailService {
         if (!localPart.startsWith("demo")) {
             return List.of(normalized);
         }
-        Set<String> recipients = new LinkedHashSet<>(DEMO_RECIPIENTS);
+        if (demoRecipients.isEmpty()) {
+            return List.of(normalized);
+        }
+        Set<String> recipients = new LinkedHashSet<>(demoRecipients);
         return new ArrayList<>(recipients);
+    }
+
+    private List<String> parseRecipients(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return java.util.Arrays.stream(value.split(","))
+                .map(String::trim)
+                .map(String::toLowerCase)
+                .filter(recipient -> !recipient.isBlank())
+                .distinct()
+                .toList();
     }
 }

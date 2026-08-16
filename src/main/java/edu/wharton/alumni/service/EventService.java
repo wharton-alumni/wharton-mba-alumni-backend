@@ -12,7 +12,6 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -21,13 +20,13 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class EventService {
     private final AlumniEventRepository eventRepository;
     private final AlumniService alumniService;
-    private final WhartonEventScraperService whartonEventScraperService;
+    private final ExternalEventRefreshService externalEventRefreshService;
 
     public EventService(AlumniEventRepository eventRepository, AlumniService alumniService,
-                        WhartonEventScraperService whartonEventScraperService) {
+                        ExternalEventRefreshService externalEventRefreshService) {
         this.eventRepository = eventRepository;
         this.alumniService = alumniService;
-        this.whartonEventScraperService = whartonEventScraperService;
+        this.externalEventRefreshService = externalEventRefreshService;
     }
 
     public List<AlumniEvent> findByStatus(EventStatus status) {
@@ -40,7 +39,8 @@ public class EventService {
         if (status != null && status != EventStatus.APPROVED) {
             return savedEvents;
         }
-        return Stream.concat(savedEvents.stream(), whartonEventScraperService.upcomingEvents().stream())
+        externalEventRefreshService.refreshIfStaleInBackground();
+        return savedEvents.stream()
                 .sorted(Comparator.comparing(AlumniEvent::eventDate, Comparator.nullsLast(Comparator.naturalOrder())))
                 .toList();
     }

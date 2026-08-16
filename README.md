@@ -1,80 +1,70 @@
 # Wharton EMBA Alumni Backend
 
-Spring Boot Java API for the Wharton EMBA Alumni Portal. This replaces the original Next.js backend recommendation with a dedicated Java service.
+Spring Boot API for the Wharton EMBA Alumni Portal.
 
-## Run locally
+## Local Development
 
 ```bash
 mvn spring-boot:run
 ```
 
-The API runs at `http://localhost:8080/api` and allows CORS from the Vite frontend at `http://localhost:5173`.
-Without database environment variables, the app uses an in-memory H2 database for local development.
+The API runs at `http://localhost:8080/api`. Without database environment variables, the app uses an in-memory H2 database.
 
-To load demo data on startup locally:
+Optional local-only seed data can be enabled for throwaway testing:
 
 ```bash
 SEED_DATA_ENABLED=true mvn spring-boot:run
 ```
 
-## Seeded data
+Seed fixtures are synthetic and must not contain real alumni, BioBook, Railway, or email-provider data.
 
-All seeded users use password `password`.
+## Production Configuration
 
-- `admin@wharton.upenn.edu`
-- `maya.chen@wharton.upenn.edu`
-- `diego.ramirez@wharton.upenn.edu`
-- `sarah.okafor@wharton.upenn.edu`
-- `jonathan.lee@wharton.upenn.edu`
-- `priya.menon@wharton.upenn.edu`
-
-## Reseed demo data
-
-With the backend running:
-
-```bash
-./scripts/seed-data.sh
-```
-
-Use a different API URL if needed:
-
-```bash
-API_BASE_URL=http://localhost:8080/api ./scripts/seed-data.sh
-```
-
-## Railway deployment
-
-This backend is ready to deploy on Railway with a Railway Postgres service.
-
-1. Create a Railway project from this GitHub repository.
-2. Add a Railway Postgres database service.
-3. Set the backend service variables below.
-4. Deploy the backend service.
-5. Set the frontend `VITE_API_BASE_URL` to `https://<backend-domain>/api`.
-
-Required Railway variables:
+Required variables:
 
 ```text
-SPRING_DATASOURCE_URL=jdbc:postgresql://${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}
-SPRING_DATASOURCE_USERNAME=${{Postgres.PGUSER}}
-SPRING_DATASOURCE_PASSWORD=${{Postgres.PGPASSWORD}}
-APP_CORS_ALLOWED_ORIGINS=https://<your-frontend-domain>
+SPRING_DATASOURCE_URL=jdbc:postgresql://<host>:<port>/<database>
+SPRING_DATASOURCE_USERNAME=<database-user>
+SPRING_DATASOURCE_PASSWORD=<database-password>
+JWT_SECRET=<long-random-secret>
+APP_CORS_ALLOWED_ORIGINS=https://whartonemba.com,https://www.whartonemba.com
 SEED_DATA_ENABLED=false
+BIOBOOK_SEED_ENABLED=false
 ```
 
-Optional variables:
+Email variables:
 
 ```text
-SPRING_JPA_HIBERNATE_DDL_AUTO=update
+BREVO_API_KEY=<brevo-api-key>
+EMAIL_SENDER_NAME=Wharton EMBA Alumni Portal
+EMAIL_SENDER_EMAIL=<verified-sender-email>
+EMAIL_DEMO_RECIPIENTS=<optional-comma-separated-test-recipients>
 ```
 
-Use `SEED_DATA_ENABLED=true` only for throwaway demo environments. It deletes and recreates seeded alumni/events data.
+Headshot storage variables:
 
-Railway uses the included `Dockerfile` and `railway.json`. Health checks use `/actuator/health`.
+```text
+HEADSHOT_BUCKET_NAME=<bucket-name>
+HEADSHOT_BUCKET_ENDPOINT=<s3-compatible-endpoint>
+HEADSHOT_BUCKET_REGION=<region>
+HEADSHOT_BUCKET_ACCESS_KEY_ID=<access-key>
+HEADSHOT_BUCKET_SECRET_ACCESS_KEY=<secret-key>
+```
 
-## Production notes
+External event refresh variables:
 
-- BioBook claim data is intentionally not committed. Load it into Postgres through a controlled import path.
-- The current auth response still returns demo tokens. Replace this with JWT/session auth before handling real users.
-- For production, restrict `APP_CORS_ALLOWED_ORIGINS` to the deployed frontend domain only.
-- Enable Railway Postgres backups/PITR before launch.
+```text
+EXTERNAL_EVENTS_ENABLED=true
+EXTERNAL_EVENTS_REFRESH_HOURS=24
+EXTERNAL_EVENTS_STARTUP_DELAY_MS=1000
+EXTERNAL_EVENTS_REFRESH_CHECK_MS=3600000
+```
+
+`GET /api/events` serves events from Postgres. External Wharton event scraping is a background refresh and should not block user page loads.
+
+## Security Notes
+
+- Do not commit real BioBook files, alumni exports, Railway credentials, Brevo keys, JWT secrets, database URLs, or production emails.
+- Keep `SEED_DATA_ENABLED=false` and `BIOBOOK_SEED_ENABLED=false` in production.
+- Use Railway/Postgres backups before launch.
+- Rotate any credential that is accidentally committed or pasted into a public issue/log.

@@ -28,9 +28,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -73,8 +71,6 @@ public class WhartonEventScraperService {
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
     private final boolean enabled;
-    private volatile Instant cachedAt = Instant.EPOCH;
-    private volatile List<AlumniEvent> cachedEvents = List.of();
 
     public WhartonEventScraperService(ObjectMapper objectMapper,
                                       @Value("${app.events.external.enabled:true}") boolean enabled) {
@@ -86,14 +82,15 @@ public class WhartonEventScraperService {
                 .build();
     }
 
-    public List<AlumniEvent> upcomingEvents() {
+    public boolean enabled() {
+        return enabled;
+    }
+
+    public List<AlumniEvent> scrapeUpcomingEvents() {
         if (!enabled) {
             return List.of();
         }
-        if (cachedAt.plus(Duration.ofMinutes(30)).isAfter(Instant.now())) {
-            return cachedEvents;
-        }
-        Map<UUID, AlumniEvent> eventsById = new LinkedHashMap<>();
+        java.util.Map<UUID, AlumniEvent> eventsById = new java.util.LinkedHashMap<>();
         for (String sourceUrl : SOURCES) {
             for (AlumniEvent event : scrapeSource(sourceUrl)) {
                 eventsById.putIfAbsent(event.id(), event);
@@ -102,11 +99,9 @@ public class WhartonEventScraperService {
         for (AlumniEvent event : scrapeNationBuilderCalendarEvents()) {
             eventsById.putIfAbsent(event.id(), event);
         }
-        cachedEvents = eventsById.values().stream()
+        return eventsById.values().stream()
                 .sorted(Comparator.comparing(AlumniEvent::eventDate, Comparator.nullsLast(Comparator.naturalOrder())))
                 .toList();
-        cachedAt = Instant.now();
-        return cachedEvents;
     }
 
     private List<AlumniEvent> scrapeSource(String sourceUrl) {
@@ -295,7 +290,7 @@ public class WhartonEventScraperService {
         return java.util.Optional.of(new AlumniEvent(
                 id, title, description, categoryFor(sourceUrl, title, description), eventDate, location, url,
                 imageUrl, EXTERNAL_POSTER_ID, host(sourceUrl), CohortCampus.Global, false, null,
-                EventStatus.APPROVED, Instant.now()
+                EventStatus.APPROVED, Instant.now(), true
         ));
     }
 
@@ -317,7 +312,8 @@ public class WhartonEventScraperService {
                 false,
                 null,
                 EventStatus.APPROVED,
-                Instant.now()
+                Instant.now(),
+                true
         );
     }
 

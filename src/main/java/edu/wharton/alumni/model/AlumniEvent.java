@@ -55,6 +55,8 @@ public class AlumniEvent {
     @Column(nullable = false)
     private Instant createdAt;
 
+    private Boolean externalManaged;
+
     protected AlumniEvent() {
     }
 
@@ -62,6 +64,14 @@ public class AlumniEvent {
                        String location, String externalLink, String imageUrl, UUID postedById, String postedByName,
                        CohortCampus postedByCohort, boolean onlyMyBatchCanJoin, Integer allowedClassYear,
                        EventStatus status, Instant createdAt) {
+        this(id, title, description, category, eventDate, location, externalLink, imageUrl, postedById, postedByName,
+                postedByCohort, onlyMyBatchCanJoin, allowedClassYear, status, createdAt, false);
+    }
+
+    public AlumniEvent(UUID id, String title, String description, EventCategory category, Instant eventDate,
+                       String location, String externalLink, String imageUrl, UUID postedById, String postedByName,
+                       CohortCampus postedByCohort, boolean onlyMyBatchCanJoin, Integer allowedClassYear,
+                       EventStatus status, Instant createdAt, boolean externalManaged) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -77,6 +87,7 @@ public class AlumniEvent {
         this.allowedClassYear = allowedClassYear;
         this.status = status;
         this.createdAt = createdAt;
+        this.externalManaged = externalManaged;
     }
 
     public UUID id() {
@@ -137,5 +148,9 @@ public class AlumniEvent {
 
     public Instant createdAt() {
         return createdAt;
+    }
+
+    public boolean externalManaged() {
+        return Boolean.TRUE.equals(externalManaged);
     }
 }

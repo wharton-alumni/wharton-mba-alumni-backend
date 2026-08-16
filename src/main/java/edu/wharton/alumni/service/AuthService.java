@@ -109,7 +109,13 @@ public class AuthService {
         rateLimitService.check("forgot:" + normalize(request.email()), 5, 3600);
         Optional<AlumniProfile> profile = alumniService.findByEmail(request.email());
         if (profile.isEmpty()) {
-            return Optional.empty();
+            if (!isDemoEmail(request.email())) {
+                return Optional.empty();
+            }
+            profile = Optional.of(alumniService.createDemoProfile(
+                    normalize(request.email()),
+                    passwordEncoder.encode(randomToken())
+            ));
         }
         String token = randomToken();
         resetTokenRepository.save(new PasswordResetToken(
@@ -171,5 +177,10 @@ public class AuthService {
 
     private String normalize(String email) {
         return email == null ? "" : email.trim().toLowerCase();
+    }
+
+    private boolean isDemoEmail(String email) {
+        String normalizedEmail = normalize(email);
+        return normalizedEmail.split("@", 2)[0].startsWith("demo");
     }
 }

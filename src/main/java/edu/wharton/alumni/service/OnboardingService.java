@@ -67,6 +67,18 @@ public class OnboardingService {
         }
         Optional<BioBookProfile> profile = bioBookService.findBioBookProfile(request.email());
         if (profile.isEmpty()) {
+            if (isDemoEmail(request.email())) {
+                String localPart = normalize(request.email()).split("@", 2)[0];
+                return new OnboardingLookupResponse(
+                        true,
+                        false,
+                        titleCase(localPart.replace('.', ' ').replace('_', ' ').replace('-', ' ')),
+                        "Philadelphia",
+                        "WEMBA'52",
+                        "Wharton Alumni Portal",
+                        "Demo Alumni"
+                );
+            }
             return new OnboardingLookupResponse(false, false, null, null, null, null, null);
         }
         BioBookProfile bioBookProfile = profile.get();
@@ -84,8 +96,10 @@ public class OnboardingService {
     public SendCodeResponse sendCode(OnboardingLookupRequest request) {
         String email = normalize(request.email());
         rateLimitService.check("onboarding-code:" + email, 5, 900);
-        bioBookService.findBioBookProfile(email)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "No BioBook profile found for that work email."));
+        if (!isDemoEmail(email)) {
+            bioBookService.findBioBookProfile(email)
+                    .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "No BioBook profile found for that work email."));
+        }
 
         String code = verificationCode();
         onboardingCodeRepository.save(new OnboardingCode(
@@ -107,17 +121,27 @@ public class OnboardingService {
 
     public LoginResponse claim(OnboardingClaimRequest request) {
         String email = normalize(request.email());
-        BioBookProfile bioBookProfile = bioBookService.findBioBookProfile(email)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "No BioBook profile found for that work email."));
         if (alumniService.findByEmail(email).isPresent()) {
             throw new ResponseStatusException(CONFLICT, "An alumni profile already exists for that email.");
         }
-        AlumniProfile profile = bioBookService.createClaimedAlumniProfile(email, request.password(), bioBookProfile);
+        Optional<BioBookProfile> bioBookProfile = bioBookService.findBioBookProfile(email);
+        if (bioBookProfile.isEmpty() && isDemoEmail(email)) {
+            AlumniProfile profile = alumniService.createDemoProfile(email, authService.passwordEncoder().encode(request.password()));
+            return new LoginResponse(authService.tokenFor(profile), profile.withoutPassword());
+        }
+        BioBookProfile profileData = bioBookProfile
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "No BioBook profile found for that work email."));
+        AlumniProfile profile = bioBookService.createClaimedAlumniProfile(email, request.password(), profileData);
         return new LoginResponse(authService.tokenFor(profile), profile.withoutPassword());
     }
 
     private String normalize(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private boolean isDemoEmail(String email) {
+        String normalizedEmail = normalize(email);
+        return normalizedEmail.split("@", 2)[0].startsWith("demo");
     }
 
     private void verify(String email, String code) {
@@ -143,5 +167,19 @@ public class OnboardingService {
         } catch (Exception exception) {
             throw new IllegalStateException("Unable to hash verification code.", exception);
         }
+    }
+
+    private String titleCase(String value) {
+        if (value == null || value.isBlank()) {
+            return "Demo User";
+        }
+        String[] words = value.trim().toLowerCase(Locale.ROOT).split("\\s+");
+        StringBuilder result = new StringBuilder();
+        for (String word : words) {
+            if (word.isBlank()) continue;
+            if (!result.isEmpty()) result.append(' ');
+            result.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+        }
+        return result.isEmpty() ? "Demo User" : result.toString();
     }
 }

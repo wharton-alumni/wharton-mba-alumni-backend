@@ -3,6 +3,7 @@ package edu.wharton.alumni.service;
 import edu.wharton.alumni.dto.ProfileUpdateRequest;
 import edu.wharton.alumni.model.AlumniProfile;
 import edu.wharton.alumni.model.CohortCampus;
+import edu.wharton.alumni.model.Role;
 import edu.wharton.alumni.repository.AlumniProfileRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -69,6 +70,40 @@ public class AlumniService {
     }
 
     public AlumniProfile save(AlumniProfile profile) {
+        return profileRepository.save(profile);
+    }
+
+    public AlumniProfile createDemoProfile(String email, String passwordHash) {
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+        String localPart = normalizedEmail.split("@", 2)[0];
+        String demoName = localPart.replace('.', ' ').replace('_', ' ').replace('-', ' ').trim();
+        String[] nameParts = demoName.isBlank() ? new String[] { "Demo", "User" } : demoName.split("\\s+");
+        String firstName = titleCase(nameParts.length > 0 ? nameParts[0] : "Demo");
+        String lastName = titleCase(nameParts.length > 1 ? String.join(" ", java.util.Arrays.copyOfRange(nameParts, 1, nameParts.length)) : "User");
+        AlumniProfile profile = new AlumniProfile(
+                UUID.nameUUIDFromBytes(normalizedEmail.getBytes(StandardCharsets.UTF_8)),
+                normalizedEmail,
+                passwordHash,
+                firstName,
+                lastName,
+                "Not provided",
+                CohortCampus.Philadelphia,
+                2028,
+                "Demo Alumni",
+                "Wharton Alumni Portal",
+                "Technology",
+                "Philadelphia",
+                "PA",
+                "",
+                "Demo profile for Wharton Alumni Portal testing.",
+                false,
+                false,
+                "",
+                "{}",
+                Role.ALUMNI,
+                true,
+                Instant.now()
+        );
         return profileRepository.save(profile);
     }
 
@@ -154,5 +189,13 @@ public class AlumniService {
 
     private String valueOr(String next, String current) {
         return next == null ? current : next;
+    }
+
+    private String titleCase(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        String lower = value.toLowerCase(Locale.ROOT);
+        return Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
     }
 }

@@ -52,7 +52,7 @@ public class AlumniProfile {
 
     private boolean willingToMentor;
     private boolean hiring;
-    @Column(length = 1000000)
+    @Column(columnDefinition = "text")
     private String avatarUrl;
 
     @Column(columnDefinition = "text")

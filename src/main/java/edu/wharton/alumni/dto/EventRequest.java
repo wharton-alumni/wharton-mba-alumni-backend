@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public record EventRequest(
         @NotBlank String title,
-        @NotBlank String description,
+        String description,
         @NotNull EventCategory category,
         Instant eventDate,
         @NotBlank String location,

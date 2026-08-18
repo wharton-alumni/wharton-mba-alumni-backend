@@ -105,7 +105,12 @@ public class BrevoEmailService implements EmailService {
     private void sendEmail(String toEmail, String subject, String htmlContent) {
         List<String> recipients = routeRecipients(toEmail);
         if (apiKey == null || apiKey.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Email service is not configured.");
+            System.out.println("=== LOCAL DEV: Email service not configured — printing email instead ===");
+            System.out.println("To: " + recipients);
+            System.out.println("Subject: " + subject);
+            System.out.println("Body: " + htmlContent.replaceAll("<[^>]+>", "").replaceAll("\\s+", " ").trim());
+            System.out.println("=== END EMAIL ===");
+            return;
         }
         try {
             String payload = objectMapper.writeValueAsString(Map.of(

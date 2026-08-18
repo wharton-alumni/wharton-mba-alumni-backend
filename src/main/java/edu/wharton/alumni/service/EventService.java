@@ -80,6 +80,41 @@ public class EventService {
         return eventRepository.save(updated);
     }
 
+    public AlumniEvent update(UUID id, UUID profileId, EventRequest request) {
+        AlumniEvent existing = eventRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Event not found."));
+        if (!existing.postedById().equals(profileId)) {
+            throw new ResponseStatusException(BAD_REQUEST, "You can only edit your own events.");
+        }
+        AlumniEvent updated = new AlumniEvent(
+                existing.id(),
+                request.title(),
+                request.description(),
+                request.category(),
+                request.eventDate(),
+                request.location(),
+                request.externalLink(),
+                request.imageUrl(),
+                existing.postedById(),
+                existing.postedByName(),
+                existing.postedByCohort(),
+                Boolean.TRUE.equals(request.onlyMyBatchCanJoin()),
+                Boolean.TRUE.equals(request.onlyMyBatchCanJoin()) ? existing.allowedClassYear() : existing.allowedClassYear(),
+                existing.status(),
+                existing.createdAt()
+        );
+        return eventRepository.save(updated);
+    }
+
+    public void delete(UUID id, UUID profileId) {
+        AlumniEvent existing = eventRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Event not found."));
+        if (!existing.postedById().equals(profileId)) {
+            throw new ResponseStatusException(BAD_REQUEST, "You can only delete your own events.");
+        }
+        eventRepository.deleteById(id);
+    }
+
     public void replaceWithSeedData(List<SeedEvent> seedEvents) {
         eventRepository.deleteAll();
         for (int index = 0; index < seedEvents.size(); index++) {

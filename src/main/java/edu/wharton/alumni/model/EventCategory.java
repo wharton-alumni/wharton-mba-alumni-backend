@@ -8,7 +8,8 @@ public enum EventCategory {
     Industry_Insights("Industry Insights"),
     Reunion("Reunion"),
     Career_Opportunity("Career Opportunity"),
-    Community_Event("Community Event");
+    Community_Event("Community Event"),
+    Dinner("Dinner");
 
     private final String label;
 

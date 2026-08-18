@@ -10,7 +10,9 @@ import edu.wharton.alumni.security.JwtUser;
 import edu.wharton.alumni.service.EventRsvpService;
 import edu.wharton.alumni.service.EventService;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -59,5 +61,19 @@ public class EventController {
                                         @PathVariable UUID eventId,
                                         @Valid @RequestBody EventRsvpRequest request) {
         return rsvpService.update(eventId, user.id(), request.status());
+    }
+
+    @PutMapping("/{eventId}")
+    public AlumniEvent updateEvent(@AuthenticationPrincipal JwtUser user,
+                                   @PathVariable UUID eventId,
+                                   @Valid @RequestBody EventRequest request) {
+        return eventService.update(eventId, user.id(), request);
+    }
+
+    @DeleteMapping("/{eventId}")
+    public ResponseEntity<Void> deleteEvent(@AuthenticationPrincipal JwtUser user,
+                                            @PathVariable UUID eventId) {
+        eventService.delete(eventId, user.id());
+        return ResponseEntity.noContent().build();
     }
 }

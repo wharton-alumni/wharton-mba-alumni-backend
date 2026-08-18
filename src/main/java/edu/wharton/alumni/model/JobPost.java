@@ -28,12 +28,20 @@ public class JobPost {
     private UUID postedById;
     private String postedByName;
     private Instant createdAt;
+    private Instant startDate;
+    private Instant endDate;
 
     protected JobPost() {
     }
 
     public JobPost(UUID id, String title, String company, String location, String externalLink, String applicationLink,
                    String description, UUID postedById, String postedByName, Instant createdAt) {
+        this(id, title, company, location, externalLink, applicationLink, description, postedById, postedByName, createdAt, null, null);
+    }
+
+    public JobPost(UUID id, String title, String company, String location, String externalLink, String applicationLink,
+                   String description, UUID postedById, String postedByName, Instant createdAt,
+                   Instant startDate, Instant endDate) {
         this.id = id;
         this.title = title;
         this.company = company;
@@ -44,7 +52,17 @@ public class JobPost {
         this.postedById = postedById;
         this.postedByName = postedByName;
         this.createdAt = createdAt;
+        this.startDate = startDate;
+        this.endDate = endDate;
     }
 
     public UUID id() { return id; }
+
+    public String postedByName() { return postedByName; }
+
+    public UUID postedById() { return postedById; }
+
+    public Instant createdAt() { return createdAt; }
+
+    public Instant endDate() { return endDate; }
 }

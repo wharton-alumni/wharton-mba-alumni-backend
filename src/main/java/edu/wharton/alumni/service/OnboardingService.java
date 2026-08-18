@@ -96,7 +96,7 @@ public class OnboardingService {
     public SendCodeResponse sendCode(OnboardingLookupRequest request) {
         String email = normalize(request.email());
         rateLimitService.check("onboarding-code:" + email, 5, 900);
-        if (!isDemoEmail(email)) {
+        if (!isDemoEmail(email) && alumniService.findByEmail(email).isEmpty()) {
             bioBookService.findBioBookProfile(email)
                     .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "No BioBook profile found for that work email."));
         }

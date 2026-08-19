@@ -1,9 +1,11 @@
 package edu.wharton.alumni.service;
 
+import edu.wharton.alumni.dto.BioBookLookupResponse;
 import edu.wharton.alumni.dto.LoginResponse;
 import edu.wharton.alumni.dto.OnboardingClaimRequest;
 import edu.wharton.alumni.dto.OnboardingLookupRequest;
 import edu.wharton.alumni.dto.OnboardingLookupResponse;
+import edu.wharton.alumni.dto.OnboardingRecordLookupRequest;
 import edu.wharton.alumni.dto.SendCodeResponse;
 import edu.wharton.alumni.dto.VerifyCodeRequest;
 import edu.wharton.alumni.model.AlumniProfile;
@@ -22,6 +24,7 @@ import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
 
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -65,32 +68,25 @@ public class OnboardingService {
                     alumniProfile.currentTitle()
             );
         }
-        Optional<BioBookProfile> profile = bioBookService.findBioBookProfile(request.email());
-        if (profile.isEmpty()) {
-            if (isDemoEmail(request.email())) {
-                String localPart = normalize(request.email()).split("@", 2)[0];
-                return new OnboardingLookupResponse(
-                        true,
-                        false,
-                        titleCase(localPart.replace('.', ' ').replace('_', ' ').replace('-', ' ')),
-                        "Philadelphia",
-                        "WEMBA'52",
-                        "Wharton Alumni Portal",
-                        "Demo Alumni"
-                );
-            }
-            return new OnboardingLookupResponse(false, false, null, null, null, null, null);
+        return new OnboardingLookupResponse(false, false, null, null, null, null, null);
+    }
+
+    public BioBookLookupResponse findRecord(OnboardingRecordLookupRequest request) {
+        String normalizedName = normalizeName(request.fullName());
+        if (normalizedName.isBlank()) {
+            return new BioBookLookupResponse(false, false, null);
         }
-        BioBookProfile bioBookProfile = profile.get();
-        return new OnboardingLookupResponse(
-                true,
-                false,
-                bioBookProfile.fullLegalName(),
-                bioBookProfile.cohort(),
-                bioBookProfile.batch(),
-                bioBookProfile.currentEmployer(),
-                bioBookProfile.currentTitleRole()
-        );
+
+        List<BioBookProfile> matches = bioBookService.findAllBioBookProfiles().stream()
+                .filter(profile -> nameMatches(profile, normalizedName))
+                .filter(profile -> batchMatches(profile, request.batch()))
+                .filter(profile -> cohortMatches(profile, request.cohort()))
+                .toList();
+
+        if (matches.size() != 1) {
+            return new BioBookLookupResponse(false, false, null);
+        }
+        return new BioBookLookupResponse(true, false, matches.get(0));
     }
 
     public SendCodeResponse sendCode(OnboardingLookupRequest request) {
@@ -138,6 +134,31 @@ public class OnboardingService {
     private boolean isDemoEmail(String email) {
         String normalizedEmail = normalize(email);
         return normalizedEmail.split("@", 2)[0].startsWith("demo");
+    }
+
+    private boolean nameMatches(BioBookProfile profile, String normalizedName) {
+        return normalizeName(profile.fullLegalName()).equals(normalizedName)
+                || normalizeName(profile.preferredNameNickname()).equals(normalizedName);
+    }
+
+    private boolean batchMatches(BioBookProfile profile, String batch) {
+        if (batch == null || batch.isBlank()) {
+            return true;
+        }
+        return normalizeName(profile.batch()).equals(normalizeName(batch));
+    }
+
+    private boolean cohortMatches(BioBookProfile profile, String cohort) {
+        if (cohort == null || cohort.isBlank()) {
+            return true;
+        }
+        String normalizedCohort = normalizeName(cohort);
+        return normalizeName(profile.cohort()).equals(normalizedCohort)
+                || normalizeName(profile.cohortCampus() == null ? "" : profile.cohortCampus().label()).equals(normalizedCohort);
+    }
+
+    private String normalizeName(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", " ").trim();
     }
 
     private void verify(String email, String code) {

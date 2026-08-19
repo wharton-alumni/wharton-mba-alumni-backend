@@ -4,8 +4,10 @@ import edu.wharton.alumni.dto.LoginResponse;
 import edu.wharton.alumni.dto.OnboardingClaimRequest;
 import edu.wharton.alumni.dto.OnboardingLookupRequest;
 import edu.wharton.alumni.dto.OnboardingLookupResponse;
+import edu.wharton.alumni.dto.OnboardingRecordLookupRequest;
 import edu.wharton.alumni.dto.SendCodeResponse;
 import edu.wharton.alumni.dto.VerifyCodeRequest;
+import edu.wharton.alumni.dto.BioBookLookupResponse;
 import edu.wharton.alumni.service.OnboardingService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,6 +37,11 @@ public class OnboardingController {
     @PostMapping("/verify-code")
     public SendCodeResponse verifyCode(@Valid @RequestBody VerifyCodeRequest request) {
         return onboardingService.verifyCode(request);
+    }
+
+    @PostMapping("/find-record")
+    public BioBookLookupResponse findRecord(@Valid @RequestBody OnboardingRecordLookupRequest request) {
+        return onboardingService.findRecord(request);
     }
 
     @PostMapping("/claim")

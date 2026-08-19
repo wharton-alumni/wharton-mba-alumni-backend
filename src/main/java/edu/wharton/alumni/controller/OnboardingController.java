@@ -5,6 +5,8 @@ import edu.wharton.alumni.dto.OnboardingClaimRequest;
 import edu.wharton.alumni.dto.OnboardingLookupRequest;
 import edu.wharton.alumni.dto.OnboardingLookupResponse;
 import edu.wharton.alumni.dto.OnboardingRecordLookupRequest;
+import edu.wharton.alumni.dto.OnboardingRecordLookupResponse;
+import edu.wharton.alumni.dto.OnboardingRecordVerifyRequest;
 import edu.wharton.alumni.dto.SendCodeResponse;
 import edu.wharton.alumni.dto.VerifyCodeRequest;
 import edu.wharton.alumni.dto.BioBookLookupResponse;
@@ -40,8 +42,13 @@ public class OnboardingController {
     }
 
     @PostMapping("/find-record")
-    public BioBookLookupResponse findRecord(@Valid @RequestBody OnboardingRecordLookupRequest request) {
+    public OnboardingRecordLookupResponse findRecord(@Valid @RequestBody OnboardingRecordLookupRequest request) {
         return onboardingService.findRecord(request);
+    }
+
+    @PostMapping("/verify-record")
+    public BioBookLookupResponse verifyRecord(@Valid @RequestBody OnboardingRecordVerifyRequest request) {
+        return onboardingService.verifyRecord(request);
     }
 
     @PostMapping("/claim")

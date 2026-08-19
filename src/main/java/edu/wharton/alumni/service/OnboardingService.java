@@ -6,6 +6,8 @@ import edu.wharton.alumni.dto.OnboardingClaimRequest;
 import edu.wharton.alumni.dto.OnboardingLookupRequest;
 import edu.wharton.alumni.dto.OnboardingLookupResponse;
 import edu.wharton.alumni.dto.OnboardingRecordLookupRequest;
+import edu.wharton.alumni.dto.OnboardingRecordLookupResponse;
+import edu.wharton.alumni.dto.OnboardingRecordVerifyRequest;
 import edu.wharton.alumni.dto.SendCodeResponse;
 import edu.wharton.alumni.dto.VerifyCodeRequest;
 import edu.wharton.alumni.model.AlumniProfile;
@@ -71,22 +73,36 @@ public class OnboardingService {
         return new OnboardingLookupResponse(false, false, null, null, null, null, null);
     }
 
-    public BioBookLookupResponse findRecord(OnboardingRecordLookupRequest request) {
-        String normalizedName = normalizeName(request.fullName());
-        if (normalizedName.isBlank()) {
+    public OnboardingRecordLookupResponse findRecord(OnboardingRecordLookupRequest request) {
+        Optional<BioBookProfile> match = findUniquePersonalEmailMatch(request.fullName());
+        if (match.isEmpty()) {
+            return new OnboardingRecordLookupResponse(false, null);
+        }
+
+        String personalEmail = normalize(match.get().personalEmailForClassDirectory());
+        rateLimitService.check("onboarding-record-code:" + personalEmail, 5, 900);
+
+        String code = verificationCode();
+        onboardingCodeRepository.save(new OnboardingCode(
+                UUID.randomUUID(),
+                personalEmail,
+                sha256(code),
+                Instant.now().plusSeconds(verificationCodeTtlMinutes * 60),
+                null,
+                Instant.now()
+        ));
+        emailService.sendVerificationCode(personalEmail, code, verificationCodeTtlMinutes);
+        return new OnboardingRecordLookupResponse(true, personalEmail);
+    }
+
+    public BioBookLookupResponse verifyRecord(OnboardingRecordVerifyRequest request) {
+        Optional<BioBookProfile> match = findUniquePersonalEmailMatch(request.fullName());
+        if (match.isEmpty()) {
             return new BioBookLookupResponse(false, false, null);
         }
 
-        List<BioBookProfile> matches = bioBookService.findAllBioBookProfiles().stream()
-                .filter(profile -> nameMatches(profile, normalizedName))
-                .filter(profile -> batchMatches(profile, request.batch()))
-                .filter(profile -> cohortMatches(profile, request.cohort()))
-                .toList();
-
-        if (matches.size() != 1) {
-            return new BioBookLookupResponse(false, false, null);
-        }
-        return new BioBookLookupResponse(true, false, matches.get(0));
+        verify(match.get().personalEmailForClassDirectory(), request.code());
+        return new BioBookLookupResponse(true, false, match.get());
     }
 
     public SendCodeResponse sendCode(OnboardingLookupRequest request) {
@@ -141,20 +157,19 @@ public class OnboardingService {
                 || normalizeName(profile.preferredNameNickname()).equals(normalizedName);
     }
 
-    private boolean batchMatches(BioBookProfile profile, String batch) {
-        if (batch == null || batch.isBlank()) {
-            return true;
+    private Optional<BioBookProfile> findUniquePersonalEmailMatch(String fullName) {
+        String normalizedName = normalizeName(fullName);
+        if (normalizedName.isBlank()) {
+            return Optional.empty();
         }
-        return normalizeName(profile.batch()).equals(normalizeName(batch));
-    }
 
-    private boolean cohortMatches(BioBookProfile profile, String cohort) {
-        if (cohort == null || cohort.isBlank()) {
-            return true;
-        }
-        String normalizedCohort = normalizeName(cohort);
-        return normalizeName(profile.cohort()).equals(normalizedCohort)
-                || normalizeName(profile.cohortCampus() == null ? "" : profile.cohortCampus().label()).equals(normalizedCohort);
+        List<BioBookProfile> matches = bioBookService.findAllBioBookProfiles().stream()
+                .filter(profile -> nameMatches(profile, normalizedName))
+                .filter(profile -> profile.personalEmailForClassDirectory() != null)
+                .filter(profile -> !profile.personalEmailForClassDirectory().isBlank())
+                .toList();
+
+        return matches.size() == 1 ? Optional.of(matches.get(0)) : Optional.empty();
     }
 
     private String normalizeName(String value) {
